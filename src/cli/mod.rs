@@ -46,37 +46,38 @@ pub fn run() -> io::Result<()> {
         let template: String = match args.template {
             Some(template) => match fs::read_to_string(&template) {
                 Ok(result) => result,
-                Err(error) => match error.kind() {
-                    io::ErrorKind::NotFound => {
-                        let prompt = colorize!(
-                            "<yellow><bold>Template file not founded:</> {}\n<yellow><bold>Continue?",
-                            template.to_string_lossy(),
-                        );
-
-                        if cliclack::confirm(prompt).initial_value(false).interact()? {
+                Err(error) => {
+                    match error.kind() {
+                        io::ErrorKind::NotFound => {
                             log::warning(colorize!(
-                                "<yellow><bold><italic>Creating without template...",
+                                "<red><bold>Template path:</> {}\n<red><bold>Not founded",
+                                template.to_string_lossy(),
                             ))?;
-
-                            thread::sleep(Duration::from_secs(1));
-
-                            String::new()
-                        } else {
-                            log_canceled()?;
-                            return Err(error);
                         }
-                    }
-                    io::ErrorKind::IsADirectory => {
-                        log::warning(colorize!(
-                            "<red><bold>Template path:</> {}\n<red><bold>Is a directory, not a file",
-                            template.to_string_lossy()
-                        ))?;
-                        log_canceled()?;
+                        io::ErrorKind::IsADirectory => {
+                            log::warning(colorize!(
+                                "<red><bold>Template path:</> {}\n<red><bold>Is a directory, not a file",
+                                template.to_string_lossy()
+                            ))?;
+                        }
+                        _ => return Err(error),
+                    };
 
+                    if cliclack::confirm(colorize!("<yellow><bold><italic>Continue?"))
+                        .initial_value(false)
+                        .interact()?
+                    {
+                        log::warning(colorize!(
+                            "<yellow><bold><italic>Creating without template...",
+                        ))?;
+                        thread::sleep(Duration::from_secs(1));
+                    } else {
+                        log_canceled()?;
                         return Err(error);
                     }
-                    _ => return Err(error),
-                },
+
+                    String::new()
+                }
             },
             None => String::new(),
         };
