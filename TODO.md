@@ -1,0 +1,6 @@
+- [ ] Go to yesterday, today and tomorrow dates
+- [ ] Fuzzy search folder of dates
+- [ ] Config file
+- [x] Error handling for CLI
+- [x] Date formatting in output
+- [x] Template support
