@@ -4,17 +4,23 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub fn date_to_output(date: NaiveDate, output: impl AsRef<Path>) -> io::Result<PathBuf> {
+pub fn format_output(date: NaiveDate, output: impl AsRef<Path>) -> io::Result<PathBuf> {
     let string = output.as_ref().to_str().unwrap();
     let format = date.format(string).to_string();
     let output = PathBuf::from(format);
 
-    // Exception helper
+    create_output(&output)?;
+
+    Ok(output)
+}
+
+fn create_output(output: impl AsRef<Path>) -> io::Result<()> {
+    let output = output.as_ref();
+
     fn except(msg: &str) -> io::Error {
         return io::Error::new(io::ErrorKind::InvalidInput, msg);
     }
 
-    // Validation
     if let None = output.extension() {
         return Err(except("Should end with a file extension"));
     }
@@ -24,7 +30,7 @@ pub fn date_to_output(date: NaiveDate, output: impl AsRef<Path>) -> io::Result<P
         None => return Err(except("Cannot create the directory")),
     }
 
-    Ok(output)
+    Ok(())
 }
 
 #[cfg(test)]
@@ -38,14 +44,14 @@ mod tests {
 
     #[test]
     fn invalid_path() {
-        if let Ok(_) = date_to_output(current_date(), "tests/") {
+        if let Ok(_) = format_output(current_date(), "tests/") {
             assert!(false)
         }
     }
 
     #[test]
     fn permission_error() {
-        if let Ok(_) = date_to_output(current_date(), "/error/error.md") {
+        if let Ok(_) = format_output(current_date(), "/error/error.md") {
             assert!(false)
         }
     }

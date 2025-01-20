@@ -6,7 +6,7 @@ use clap::Parser;
 use cliclack::log;
 use std::{fs, io, thread, time::Duration};
 
-use crate::date::date_to_output;
+use crate::date::format_output;
 
 /// `format!` with paris color formatting.
 macro_rules! colorize {
@@ -27,11 +27,13 @@ pub fn run() -> io::Result<()> {
 
     let date = Utc::now();
 
-    let output = match date_to_output(date.date_naive(), args.output) {
+    let output = args.output;
+    let output = match format_output(date.date_naive(), &output) {
         Ok(path) => path,
         Err(error) => {
             log::error(colorize!(
-                "<red><bold>Failed to create output: {}",
+                "<red><bold>Invalid output: {:?}\n<red><bold>{}",
+                &output,
                 error.to_string()
             ))?;
             return Err(error);
@@ -84,7 +86,8 @@ pub fn run() -> io::Result<()> {
 
         if let Err(error) = fs::write(&output, &template) {
             log::error(colorize!(
-                "<red><bold>Unable to write file: {}",
+                "<red><bold>Unable to create file:</> {}\n<red><bold>{}",
+                &output.to_string_lossy(),
                 error.to_string()
             ))?;
 
@@ -98,10 +101,7 @@ pub fn run() -> io::Result<()> {
         output.file_name().unwrap_or_default().to_string_lossy()
     ))?;
 
-    if let Err(error) = edit::edit_file(output) {
-        log::error(colorize!("<red><bold>Unable to write file"))?;
-        return Err(error);
-    };
+    edit::edit_file(output)?;
 
     return Ok(());
 }
